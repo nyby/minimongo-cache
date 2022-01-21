@@ -23,14 +23,6 @@ describe("selector", function () {
         "Sorting not supported on regular expression"
       );
     });
-    it("throws on missing type coercion implementation", function () {
-      const sortAsc = compileSort({ _id: 1 });
-      const arr = [undefined, Symbol("foo"), new Date()];
-      arr.sort(sortAsc);
-      expect(() => arr.sort(sortAsc)).to.throw(
-        '"Missing type coercion logic in _cmp'
-      );
-    });
     it("keeps unsported if empty", function () {
       const noop = compileSort({});
       const arr = [

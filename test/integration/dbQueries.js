@@ -36,9 +36,10 @@ module.exports = function () {
 
   before(function () {
     // Test a filter to return specified rows (in order)
-    return (this.testFilter =  async function (filter, ids) {
+    return (this.testFilter = function (filter, ids, done) {
       const results = this.col.find(filter, { sort: ["_id"] });
       assert.deepEqual(_.pluck(results, "_id"), ids);
+      return done();
     });
   });
 
@@ -53,10 +54,8 @@ module.exports = function () {
     });
 
     it("finds all rows", async function () {
-      this.exec(function () {
-        const results = this.col.find({});
-        assert.equal(results.length, 3);
-      });
+      const results = this.col.find({});
+      assert.equal(results.length, 3);
     });
 
     it("finds all rows with options", async function () {
@@ -64,8 +63,8 @@ module.exports = function () {
       assert.equal(3, results.length);
     });
 
-    it("filters by id", async function () {
-      return this.testFilter({ _id: "1" }, ["1"]);
+    it("filters by id", function (done) {
+      return this.testFilter({ _id: "1" }, ["1"], done);
     });
 
     it("filters by string", function (done) {
