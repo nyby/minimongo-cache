@@ -21,7 +21,7 @@ exports.compileDocumentSelector = compileDocumentSelector;
  * @param options {object?} optional sort, skip and limit transform
  * @return {*|Array}
  */
-exports.processFind = function (items, selector, options) {
+exports.processFind = function processFind (items, selector, options) {
   let filtered = _.filter(_.values(items), compileDocumentSelector(selector));
 
   // Handle geospatial operators
@@ -56,7 +56,7 @@ exports.processFind = function (items, selector, options) {
  * @param fields {object} fields definitions, like `{ _id: 1 }` or `{ secrets: 0 }`
  * @return {*}
  */
-exports.filterFields = function (items, fields) {
+exports.filterFields = function filterFields (items, fields) {
   // Handle trivial case
   if (fields == null) {
     fields = {};
@@ -325,7 +325,7 @@ var processGeoIntersectsOperator = function (selector, list) {
  * @param error
  * @return {*[]}
  */
-exports.regularizeUpsert = function (docs, bases, success, error) {
+exports.regularizeUpsert = function regularizeUpsert (docs, bases, success, error) {
   // Handle case of bases not present
   if (_.isFunction(bases)) {
     [bases, success, error] = Array.from([undefined, bases, success]);

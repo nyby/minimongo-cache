@@ -154,7 +154,9 @@ var LOGICAL_OPERATORS = {
 
   $where: function (selectorValue) {
     if (!(selectorValue instanceof Function)) {
-      selectorValue = Function("return " + selectorValue);
+      // NOTE: replaced Function("return " + selectorValue); with
+      // a closure to avoid any eval issues at all
+      selectorValue = () => selectorValue;
     }
     return function (doc) {
       return selectorValue.call(doc);
@@ -264,6 +266,7 @@ var VALUE_OPERATORS = {
       if (value === undefined) return false;
       // Definitely not _anyIfArrayPlus: $type: 4 only matches arrays that have
       // arrays as elements according to the Mongo docs.
+      // TODO this should now be supported
       return _anyIfArray(value, function (x) {
         return LocalCollection._f._type(x) === operand;
       });
@@ -554,8 +557,13 @@ LocalCollection._makeLookupFunction = function (key) {
   };
 };
 
-// The main compilation function for a given selector.
-var compileDocumentSelector = function (docSelector) {
+/**
+ * The main compilation function for a given selector.
+ * TODO make $elemMatch to work with value operators
+ * @param docSelector
+ * @return {function(*=): boolean}
+ */
+var compileDocumentSelector = function compileDocumentSelector (docSelector) {
   var perKeySelectors = [];
   _.each(docSelector, function (subSelector, key) {
     if (key.substr(0, 1) === "$") {
@@ -633,7 +641,7 @@ LocalCollection._compileSelector = function (selector) {
 // first object comes first in order, 1 if the second object comes
 // first, or 0 if neither object comes before the other.
 
-LocalCollection._compileSort = function (spec) {
+LocalCollection._compileSort = function compileSort (spec) {
   var sortSpecParts = [];
 
   if (spec instanceof Array) {
