@@ -16,28 +16,17 @@
   "homepage": "https://github.com/petehunt/minimongo-cache",
   "devDependencies": {
     "babel-preset-es2015": "^6.3.13",
-    "bowser": "^0.7.1",
-    "browserify": "^3.29.1",
     "chai": "~1.9.0",
-    "glob": "^3.2.9",
-    "gulp": "^3.8.11",
-    "gulp-babel": "^6.1.1",
-    "gulp-rename": "^1.2.0",
-    "gulp-uglify": "^0.3.1",
-    "gulp-util": "^2.2.14",
     "mocha": "^9.1.3",
     "prettier": "^2.5.1",
     "puppeteer": "^13.0.1",
-    "sinon": "~1.8.2",
-    "testem": "~0.6.7",
-    "vinyl-buffer": "0.0.0",
-    "vinyl-source-stream": "^0.1.1"
+    "sinon": "~1.8.2"
   },
   "dependencies": {
     "base64-js": "^1.5.1",
     "eventemitter3": "^1.1.0",
     "invariant": "^2.1.1",
-    "lodash": "~2.4.1",
+    "lodash": "^2.4.1",
     "nyc": "^15.1.0"
   }
 }
