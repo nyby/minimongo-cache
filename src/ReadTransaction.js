@@ -6,6 +6,9 @@
 const NullTransaction = require("./NullTransaction");
 const SynchronousWriteTransaction = require("./SynchronousWriteTransaction");
 
+/**
+ * @class
+ */
 class ReadTransaction extends NullTransaction {
   constructor() {
     super();
@@ -26,6 +29,7 @@ class ReadTransaction extends NullTransaction {
   }
 
   get(collectionName, result, _id) {
+    // TODO throw if results contains not given _id
     this.dirtyIds[collectionName] = this.dirtyIds[collectionName] || {};
     this.dirtyIds[collectionName][_id] = true;
     this.log.push(this._extractFragment(result));

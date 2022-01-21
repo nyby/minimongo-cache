@@ -65,11 +65,15 @@ exports.filterFields = function (items, fields) {
     return items;
   }
 
+  // TODO throw if fields contain both inclusive and exclusive criteria
+
   // For each item
   return _.map(items, function (item) {
     let field, from, obj, path, pathElem;
     const newItem = {};
 
+    // TODO move this check out of map to increase performance
+    // TODO: const inclusive = _.first(_.values(fields)) === 1
     if (_.first(_.values(fields)) === 1) {
       // Include fields
       for (field of Array.from(_.keys(fields).concat(["_id"]))) {

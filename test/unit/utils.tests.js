@@ -106,7 +106,7 @@ describe('utils', function () {
       const expected = items.map(i => i && ({ bar: i.bar }))
       expect(filterFields(items, { foo: 0 })).to.deep.equal(expected)
     })
-    it('throws if inclusion and exclusion criteria exist')
+    it('throws if inclusion and exclusion criteria exist at the same time')
   })
   describe(regularizeUpsert.name, function () {
     it('does Tidy up upsert parameters to always be a list of { doc: <doc>, base: <base> }', function () {
