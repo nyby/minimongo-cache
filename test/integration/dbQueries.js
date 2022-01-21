@@ -23,20 +23,8 @@ const error = function (err) {
 // c.arrstr is an array of string values
 // c.arrint is an array of integer values
 // @reset(done) must truncate the collection
-module.exports = function (pageFn = () => {}) {
+module.exports = function () {
   before(function (done) {
-    this.exec = function (fn) {
-      const page = pageFn();
-
-      if (page) {
-        return page.evaluate(() => {
-          console.debug("13123123");
-        });
-      } else {
-        return fn.call(this);
-      }
-    }.bind(this);
-
     this.reset = (done) => {
       this.db = new MemoryDb(true);
       this.db.addCollection("scratch");
@@ -48,10 +36,9 @@ module.exports = function (pageFn = () => {}) {
 
   before(function () {
     // Test a filter to return specified rows (in order)
-    return (this.testFilter = function (filter, ids, done) {
+    return (this.testFilter =  async function (filter, ids) {
       const results = this.col.find(filter, { sort: ["_id"] });
       assert.deepEqual(_.pluck(results, "_id"), ids);
-      return done();
     });
   });
 
@@ -77,8 +64,8 @@ module.exports = function (pageFn = () => {}) {
       assert.equal(3, results.length);
     });
 
-    it("filters by id", function (done) {
-      return this.testFilter({ _id: "1" }, ["1"], done);
+    it("filters by id", async function () {
+      return this.testFilter({ _id: "1" }, ["1"]);
     });
 
     it("filters by string", function (done) {
