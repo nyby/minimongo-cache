@@ -1,6 +1,6 @@
-const EJSON = require("../src/EJSON");
+const EJSON = require("../../src/EJSON");
 const { expect } = require("chai");
-const { randomHex } = require("./helpers/randomHex");
+const { randomHex } = require("../helpers/randomHex");
 
 const falsyValues = [null, undefined, "", false, 0];
 const truthyValues = [[], {}, [{}], 1, true, "foo", () => {}];
@@ -66,7 +66,6 @@ describe("EJSON", function () {
 
       nonCustomValues.forEach((val) => {
         const isCustomType = EJSON._isCustomType(val);
-        console.debug(val, isCustomType);
         expect(isCustomType).to.equal(false);
       });
     });

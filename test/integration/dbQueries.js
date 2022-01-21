@@ -7,8 +7,8 @@
  * DS205: Consider reworking code to avoid use of IIFEs
  * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
  */
-const { tickAsync } = require("./tickAsync");
-const MemoryDb = require("../src/MemoryDb");
+const { tickAsync } = require("../helpers/tickAsync");
+const MemoryDb = require("../../src/MemoryDb");
 const _ = require("lodash");
 const chai = require("chai");
 const { assert } = chai;
