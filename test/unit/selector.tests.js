@@ -4,7 +4,185 @@ const { compileDocumentSelector, compileSort } = require("../../src/selector");
 
 describe("selector", function () {
   describe(compileSort.name, function () {
-    it("is not implemented");
+    it("throws on bad sort spec", function () {
+      [undefined, null, 1, "a", () => {}].forEach((spec) => {
+        expect(() => compileSort(spec)).to.throw("Bad sort specification");
+      });
+    });
+    it("throws on sorting js code", function () {
+      const sortAsc = compileSort({ _id: 1 });
+      const arr = [{ _id: () => {} }, { _id: () => {} }];
+      expect(() => arr.sort(sortAsc)).to.throw(
+        "Sorting not supported on Javascript code"
+      );
+    });
+    it("throws on sorting regex", function () {
+      const sortAsc = compileSort({ _id: 1 });
+      const arr = [{ _id: /ab/ }, { _id: /bc/ }];
+      expect(() => arr.sort(sortAsc)).to.throw(
+        "Sorting not supported on regular expression"
+      );
+    });
+    it("throws on missing type coercion implementation", function () {
+      const sortAsc = compileSort({ _id: 1 });
+      const arr = [undefined, Symbol("foo"), new Date()];
+      arr.sort(sortAsc);
+      expect(() => arr.sort(sortAsc)).to.throw(
+        '"Missing type coercion logic in _cmp'
+      );
+    });
+    it("keeps unsported if empty", function () {
+      const noop = compileSort({});
+      const arr = [
+        { _id: "b", foo: "bar" },
+        { _id: "b", foo: "baz" },
+        { _id: "a", foo: "bar" },
+      ];
+      arr.sort(noop);
+      expect(arr).to.deep.equal([
+        { _id: "b", foo: "bar" },
+        { _id: "b", foo: "baz" },
+        { _id: "a", foo: "bar" },
+      ]);
+    });
+    it("does no op on null values", function () {
+      const noop = compileSort({ _id: 1 });
+      const arr = [
+        { _id: null, foo: "bar" },
+        { _id: null, foo: "baz" },
+        { _id: null, foo: "bar" },
+      ];
+      arr.sort(noop);
+      expect(arr).to.deep.equal([
+        { _id: null, foo: "bar" },
+        { _id: null, foo: "baz" },
+        { _id: null, foo: "bar" },
+      ]);
+    });
+    it("sorts by a single key ascending", function () {
+      const sortAsc = compileSort({ _id: 1 });
+      const sorted = [{ _id: "b" }, { _id: "a" }].sort(sortAsc);
+      expect(sorted).to.deep.equal([{ _id: "a" }, { _id: "b" }]);
+
+      const remain = [{ _id: "a" }, { _id: "b" }];
+      expect(remain.sort(sortAsc)).to.deep.equal([{ _id: "a" }, { _id: "b" }]);
+    });
+    it("sorts by a single key descending", function () {
+      const sortDesc = compileSort({ _id: -1 });
+      const sorted = [{ _id: "a" }, { _id: "b" }].sort(sortDesc);
+      expect(sorted).to.deep.equal([{ _id: "b" }, { _id: "a" }]);
+
+      const remain = [{ _id: "b" }, { _id: "a" }];
+      expect(remain.sort(sortDesc)).to.deep.equal([{ _id: "b" }, { _id: "a" }]);
+    });
+    it("sorts by multiple keys", function () {
+      const sort = compileSort({ _id: 1, foo: -1 });
+      const arr = [
+        { _id: "b", foo: "bar" },
+        { _id: "b", foo: "baz" },
+        { _id: "a", foo: "bar" },
+      ];
+      arr.sort(sort);
+      expect(arr).to.deep.equal([
+        { _id: "a", foo: "bar" },
+        { _id: "b", foo: "baz" },
+        { _id: "b", foo: "bar" },
+      ]);
+    });
+    it("sorts by array of sinlge keys and sort order", function () {
+      const sortAsc = compileSort([["_id", "asc"]]);
+      const sorted = [{ _id: "b" }, { _id: "a" }].sort(sortAsc);
+      expect(sorted).to.deep.equal([{ _id: "a" }, { _id: "b" }]);
+
+      const remain = [{ _id: "a" }, { _id: "b" }];
+      expect(remain.sort(sortAsc)).to.deep.equal([{ _id: "a" }, { _id: "b" }]);
+    });
+    it("sorts by array of multple levels and sort order");
+    it("sorty by nested object keys", function () {
+      const sortAsc = compileSort({ "foo.bar": 1 });
+      const arr = [
+        { foo: { bar: "c" } },
+        { foo: { bar: "d" } },
+        { foo: { bar: "b" } },
+        { foo: { bar: "a" } },
+      ];
+      arr.sort(sortAsc);
+      expect(arr).to.deep.equal([
+        { foo: { bar: "a" } },
+        { foo: { bar: "b" } },
+        { foo: { bar: "c" } },
+        { foo: { bar: "d" } },
+      ]);
+    });
+    it("sorts by nested array keys", function () {
+      const sortAsc = compileSort([["foo", ["bar", "asc"]]]);
+      const arr = [
+        { foo: [{ bar: "d" }] },
+        { foo: [{ bar: "b" }, { bar: "c " }] },
+        { foo: [{ bar: "a" }, { bar: "b " }] },
+      ];
+      arr.sort(sortAsc);
+      expect(arr).to.deep.equal([
+        { foo: [{ bar: "a" }, { bar: "b " }] },
+        { foo: [{ bar: "b" }, { bar: "c " }] },
+        { foo: [{ bar: "d" }] },
+      ]);
+    });
+    it("sorts binary types", function () {
+      const sort = compileSort({ _id: 1 });
+      const bin1 = Uint8Array.from("100");
+      const bin2 = Uint8Array.from("1000");
+      const arr = [{ _id: bin2 }, { _id: bin1 }];
+      arr.sort(sort);
+      expect(arr).to.deep.equal([{ _id: bin1 }, { _id: bin2 }]);
+
+      const bin3 = Uint8Array.from("a");
+      const bin4 = Uint8Array.from("b");
+      const arr2 = [{ _id: bin4 }, { _id: bin3 }];
+
+      arr2.sort(sort);
+      expect(arr2).to.deep.equal([{ _id: bin3 }, { _id: bin4 }]);
+    });
+    it("sorts by date", function () {
+      const prsn = new Date();
+      const past = new Date(prsn.getTime() - 1000);
+      const sortAsc = compileSort({ _id: 1 });
+      const arr = [{ _id: prsn }, { _id: past }];
+      arr.sort(sortAsc);
+      expect(arr).to.deep.equal([{ _id: past }, { _id: prsn }]);
+    });
+    it("sorts by boolean", function () {
+      const sortAsc = compileSort({ _id: 1 });
+      const arr = [
+        { _id: true },
+        { _id: false },
+        { _id: false },
+        { _id: true },
+      ];
+      arr.sort(sortAsc);
+      expect(arr).to.deep.equal([
+        { _id: false },
+        { _id: false },
+        { _id: true },
+        { _id: true },
+      ]);
+    });
+    it("does not sort two different types", function () {
+      const sortAsc = compileSort({ _id: 1 });
+      const sorted = [{ _id: 1 }, { _id: "b" }].sort(sortAsc);
+      expect(sorted).to.deep.equal([{ _id: 1 }, { _id: "b" }]);
+    });
+    it("always favours non-undefined before undefined", function () {
+      const sortAsc = compileSort({ _id: 1 });
+      const sorted = [{ _id: undefined }, { _id: 1 }].sort(sortAsc);
+      expect(sorted).to.deep.equal([{ _id: undefined }, { _id: 1 }]);
+
+      const undef = [{ _id: undefined }, { _id: undefined }];
+      const copy = [].concat(undef).sort(sortAsc);
+
+      // should remain untouched
+      expect(copy).to.deep.equal([undef[0], undef[1]]);
+    });
   });
   describe(compileDocumentSelector.name, function () {
     it("compiles a selector for empty object", function () {

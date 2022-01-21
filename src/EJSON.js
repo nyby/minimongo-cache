@@ -304,15 +304,16 @@ EJSON.equals = function quals(a, b, options) {
   }
   if (typeof a.equals === "function") return a.equals(b, options);
 
-  const aIsArray = a instanceof Array;
-  const bIsArray = b instanceof Array;
+  // Array.isArray works across iframes while instanceof won't
+  const aIsArray = Array.isArray(a);
+  const bIsArray = Array.isArray(b);
 
   // if not both or none are array they are not equal
   if (aIsArray !== bIsArray) {
     return false;
   }
 
-  if (aIsArray || bIsArray) {
+  if (aIsArray && bIsArray) {
     if (a.length !== b.length) return false;
     for (i = 0; i < a.length; i++) {
       if (!EJSON.equals(a[i], b[i], options)) return false;
