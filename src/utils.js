@@ -21,7 +21,7 @@ exports.compileDocumentSelector = compileDocumentSelector;
  * @param options {object?} optional sort, skip and limit transform
  * @return {*|Array}
  */
-exports.processFind = function processFind (items, selector, options) {
+exports.processFind = function processFind(items, selector, options) {
   let filtered = _.filter(_.values(items), compileDocumentSelector(selector));
 
   // Handle geospatial operators
@@ -56,7 +56,7 @@ exports.processFind = function processFind (items, selector, options) {
  * @param fields {object} fields definitions, like `{ _id: 1 }` or `{ secrets: 0 }`
  * @return {*}
  */
-exports.filterFields = function filterFields (items, fields) {
+exports.filterFields = function filterFields(items, fields) {
   // Handle trivial case
   if (fields == null) {
     fields = {};
@@ -133,13 +133,14 @@ exports.filterFields = function filterFields (items, fields) {
   });
 };
 
-const pattern = "xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx"
+const pattern = "xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx";
 
 /**
  * Creates a unique identifier string of 32 characters length.
  * @return {string}
  */
-exports.createUid = () => pattern.replace(/[xy]/g, function (c) {
+exports.createUid = () =>
+  pattern.replace(/[xy]/g, function (c) {
     const r = (Math.random() * 16) | 0;
     const v = c === "x" ? r : (r & 0x3) | 0x8;
     return v.toString(16);
@@ -325,7 +326,12 @@ var processGeoIntersectsOperator = function (selector, list) {
  * @param error
  * @return {*[]}
  */
-exports.regularizeUpsert = function regularizeUpsert (docs, bases, success, error) {
+exports.regularizeUpsert = function regularizeUpsert(
+  docs,
+  bases,
+  success,
+  error
+) {
   // Handle case of bases not present
   if (_.isFunction(bases)) {
     [bases, success, error] = Array.from([undefined, bases, success]);

@@ -563,7 +563,7 @@ LocalCollection._makeLookupFunction = function (key) {
  * @param docSelector
  * @return {function(*=): boolean}
  */
-var compileDocumentSelector = function compileDocumentSelector (docSelector) {
+var compileDocumentSelector = function compileDocumentSelector(docSelector) {
   var perKeySelectors = [];
   _.each(docSelector, function (subSelector, key) {
     if (key.substr(0, 1) === "$") {
@@ -641,7 +641,7 @@ LocalCollection._compileSelector = function (selector) {
 // first object comes first in order, 1 if the second object comes
 // first, or 0 if neither object comes before the other.
 
-LocalCollection._compileSort = function compileSort (spec) {
+LocalCollection._compileSort = function compileSort(spec) {
   var sortSpecParts = [];
 
   if (spec instanceof Array) {
