@@ -14,8 +14,14 @@ const { compileSort } = require("./selector");
 // Compile a document selector (query) to a lambda function
 exports.compileDocumentSelector = compileDocumentSelector;
 
-// Processes a find with sorting and filtering and limiting
-exports.processFind = function (items, selector, options) {
+/**
+ * Processes a find with sorting and filtering and limiting.
+ * @param items {Array|Object} the items to search through
+ * @param selector {object} mongo selector
+ * @param options {object?} optional sort, skip and limit transform
+ * @return {*|Array}
+ */
+exports.processFind = function processFind(items, selector, options) {
   let filtered = _.filter(_.values(items), compileDocumentSelector(selector));
 
   // Handle geospatial operators
@@ -42,7 +48,15 @@ exports.processFind = function (items, selector, options) {
   return filtered;
 };
 
-exports.filterFields = function (items, fields) {
+/**
+ * Filter fields by `fields` option. Creates new objects, does not mutate the
+ * original objects.
+ *
+ * @param items {Array|Object} the items to apply the filter on
+ * @param fields {object} fields definitions, like `{ _id: 1 }` or `{ secrets: 0 }`
+ * @return {*}
+ */
+exports.filterFields = function filterFields(items, fields) {
   // Handle trivial case
   if (fields == null) {
     fields = {};
@@ -51,11 +65,15 @@ exports.filterFields = function (items, fields) {
     return items;
   }
 
+  // TODO throw if fields contain both inclusive and exclusive criteria
+
   // For each item
   return _.map(items, function (item) {
     let field, from, obj, path, pathElem;
     const newItem = {};
 
+    // TODO move this check out of map to increase performance
+    // TODO: const inclusive = _.first(_.values(fields)) === 1
     if (_.first(_.values(fields)) === 1) {
       // Include fields
       for (field of Array.from(_.keys(fields).concat(["_id"]))) {
@@ -115,14 +133,25 @@ exports.filterFields = function (items, fields) {
   });
 };
 
-// Creates a unique identifier string
+const pattern = "xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx";
+
+/**
+ * Creates a unique identifier string of 32 characters length.
+ * @return {string}
+ */
 exports.createUid = () =>
-  "xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+  pattern.replace(/[xy]/g, function (c) {
     const r = (Math.random() * 16) | 0;
     const v = c === "x" ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
 
+/**
+ * @private
+ * @param selector
+ * @param list
+ * @return {*}
+ */
 var processNearOperator = function (selector, list) {
   for (var key in selector) {
     var value = selector[key];
@@ -170,7 +199,13 @@ var processNearOperator = function (selector, list) {
   return list;
 };
 
-// Very simple polygon check. Assumes that is a square
+/**
+ * Very simple polygon check. Assumes that is a square
+ * @private
+ * @param point
+ * @param polygon
+ * @return {boolean}
+ */
 const pointInPolygon = function (point, polygon) {
   // Check that first == last
   if (
@@ -219,7 +254,15 @@ const pointInPolygon = function (point, polygon) {
   return true;
 };
 
-// From http://www.movable-type.co.uk/scripts/latlong.html
+/**
+ * From http://www.movable-type.co.uk/scripts/latlong.html
+ * @private
+ * @param lat1
+ * @param lng1
+ * @param lat2
+ * @param lng2
+ * @return {number}
+ */
 var getDistanceFromLatLngInM = function (lat1, lng1, lat2, lng2) {
   const R = 6370986; // Radius of the earth in m
   const dLat = deg2rad(lat2 - lat1); // deg2rad below
@@ -235,8 +278,19 @@ var getDistanceFromLatLngInM = function (lat1, lng1, lat2, lng2) {
   return d;
 };
 
+/**
+ * @private
+ * @param deg
+ * @return {number}
+ */
 var deg2rad = (deg) => deg * (Math.PI / 180);
 
+/**
+ * @private
+ * @param selector
+ * @param list
+ * @return {*}
+ */
 var processGeoIntersectsOperator = function (selector, list) {
   for (var key in selector) {
     const value = selector[key];
@@ -262,10 +316,22 @@ var processGeoIntersectsOperator = function (selector, list) {
   return list;
 };
 
-// Tidy up upsert parameters to always be a list of { doc: <doc>, base: <base> },
-// doing basic error checking and making sure that _id is present
-// Returns [items, success, error]
-exports.regularizeUpsert = function (docs, bases, success, error) {
+/**
+ * Tidy up upsert parameters to always be a list of { doc: <doc>, base: <base> },
+ * doing basic error checking and making sure that _id is present
+ * Returns [items, success, error]
+ * @param docs
+ * @param bases
+ * @param success
+ * @param error
+ * @return {*[]}
+ */
+exports.regularizeUpsert = function regularizeUpsert(
+  docs,
+  bases,
+  success,
+  error
+) {
   // Handle case of bases not present
   if (_.isFunction(bases)) {
     [bases, success, error] = Array.from([undefined, bases, success]);
@@ -285,7 +351,7 @@ exports.regularizeUpsert = function (docs, bases, success, error) {
     base: i < bases.length ? bases[i] : undefined,
   }));
 
-  // Set _id
+  // check for _id
   for (let item of Array.from(items)) {
     if (item.doc._id == null) {
       throw new Error("All documents in the upsert must have an _id");

@@ -1,3 +1,7 @@
+/**
+ * The default transaction, representing a no-op, implements nullobject pattern.
+ * @class
+ */
 class NullTransaction {
   get(collectionName, result, ...args) {
     return result;

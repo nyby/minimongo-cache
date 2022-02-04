@@ -154,7 +154,9 @@ var LOGICAL_OPERATORS = {
 
   $where: function (selectorValue) {
     if (!(selectorValue instanceof Function)) {
-      selectorValue = Function("return " + selectorValue);
+      // NOTE: replaced Function("return " + selectorValue); with
+      // a closure to avoid any eval issues at all
+      selectorValue = () => selectorValue;
     }
     return function (doc) {
       return selectorValue.call(doc);
@@ -264,6 +266,7 @@ var VALUE_OPERATORS = {
       if (value === undefined) return false;
       // Definitely not _anyIfArrayPlus: $type: 4 only matches arrays that have
       // arrays as elements according to the Mongo docs.
+      // TODO this should now be supported
       return _anyIfArray(value, function (x) {
         return LocalCollection._f._type(x) === operand;
       });
@@ -485,17 +488,12 @@ LocalCollection._f = {
     // 18: 64-bit integer
     // 255: minkey
     // 127: maxkey
-    if (ta === 13)
+    if (ta === 13) {
       // javascript code
       throw Error("Sorting not supported on Javascript code"); // XXX
+    }
     throw Error("Unknown type to sort");
   },
-};
-
-// For unit tests. True if the given document matches the given
-// selector.
-LocalCollection._matches = function (selector, doc) {
-  return LocalCollection._compileSelector(selector)(doc);
 };
 
 // _makeLookupFunction(key) returns a lookup function.
@@ -554,8 +552,13 @@ LocalCollection._makeLookupFunction = function (key) {
   };
 };
 
-// The main compilation function for a given selector.
-var compileDocumentSelector = function (docSelector) {
+/**
+ * The main compilation function for a given selector.
+ * TODO make $elemMatch to work with value operators
+ * @param docSelector
+ * @return {function(*=): boolean}
+ */
+var compileDocumentSelector = function compileDocumentSelector(docSelector) {
   var perKeySelectors = [];
   _.each(docSelector, function (subSelector, key) {
     if (key.substr(0, 1) === "$") {
@@ -584,56 +587,25 @@ var compileDocumentSelector = function (docSelector) {
   };
 };
 
-// Given a selector, return a function that takes one argument, a
-// document, and returns true if the document matches the selector,
-// else false.
-LocalCollection._compileSelector = function (selector) {
-  // you can pass a literal function instead of a selector
-  if (selector instanceof Function)
-    return function (doc) {
-      return selector.call(doc);
-    };
+/**
+ * Give a sort spec, which can be in any of these forms:
+ *   {"key1": 1, "key2": -1}
+ *   [["key1", "asc"], ["key2", "desc"]]
+ *   ["key1", ["key2", "desc"]]
+ *
+ * (.. with the first form being dependent on the key enumeration
+ * behavior of your javascript VM, which usually does what you mean in
+ * this case if the key names don't look like integers ..)
+ *
+ * return a function that takes two objects, and returns -1 if the
+ * first object comes first in order, 1 if the second object comes
+ * first, or 0 if neither object comes before the other.
+ * @param spec
+ * @return {*}
+ * @private
+ */
 
-  // shorthand -- scalars match _id
-  if (LocalCollection._selectorIsId(selector)) {
-    return function (doc) {
-      return EJSON.equals(doc._id, selector);
-    };
-  }
-
-  // protect against dangerous selectors.  falsey and {_id: falsey} are both
-  // likely programmer error, and not what you want, particularly for
-  // destructive operations.
-  if (!selector || ("_id" in selector && !selector._id))
-    return function (doc) {
-      return false;
-    };
-
-  // Top level can't be an array or true or binary.
-  if (
-    typeof selector === "boolean" ||
-    isArray(selector) ||
-    EJSON.isBinary(selector)
-  )
-    throw new Error("Invalid selector: " + selector);
-
-  return compileDocumentSelector(selector);
-};
-
-// Give a sort spec, which can be in any of these forms:
-//   {"key1": 1, "key2": -1}
-//   [["key1", "asc"], ["key2", "desc"]]
-//   ["key1", ["key2", "desc"]]
-//
-// (.. with the first form being dependent on the key enumeration
-// behavior of your javascript VM, which usually does what you mean in
-// this case if the key names don't look like integers ..)
-//
-// return a function that takes two objects, and returns -1 if the
-// first object comes first in order, 1 if the second object comes
-// first, or 0 if neither object comes before the other.
-
-LocalCollection._compileSort = function (spec) {
+LocalCollection._compileSort = function compileSort(spec) {
   var sortSpecParts = [];
 
   if (spec instanceof Array) {
@@ -650,7 +622,7 @@ LocalCollection._compileSort = function (spec) {
         });
       }
     }
-  } else if (typeof spec === "object") {
+  } else if (typeof spec === "object" && spec !== null) {
     for (var key in spec) {
       sortSpecParts.push({
         lookup: LocalCollection._makeLookupFunction(key),
@@ -678,11 +650,15 @@ LocalCollection._compileSort = function (spec) {
     // an array itself, iterate over the values in the array separately.
     _.each(branchValues, function (branchValue) {
       // Value not an array? Pretend it is.
-      if (!isArray(branchValue)) branchValue = [branchValue];
+      if (!isArray(branchValue)) {
+        branchValue = [branchValue];
+      }
       // Value is an empty array? Pretend it was missing, since that's where it
       // should be sorted.
-      if (isArray(branchValue) && branchValue.length === 0)
+      if (isArray(branchValue) && branchValue.length === 0) {
         branchValue = [undefined];
+      }
+
       _.each(branchValue, function (value) {
         // We should get here at least once: lookup functions return non-empty
         // arrays, so the outer loop runs at least once, and we prevented

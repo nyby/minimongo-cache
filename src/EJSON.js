@@ -1,17 +1,29 @@
 var _ = require("lodash");
 
+// we use the same mechanism as react-native does:
+// https://github.com/facebook/react-native/blob/main/Libraries/Utilities/binaryToBase64.js
+// so there are no extra deps when using rn
+// also, base64-js is fully js and browser-compatible
+const base64 = require("base64-js");
+
 var EJSON = {}; // Global!
 var customTypes = {};
-// Add a custom type, using a method of your choice to get to and
-// from a basic JSON-able representation.  The factory argument
-// is a function of JSON-able --> your object
-// The type you add must have:
-// - A clone() method, so that Meteor can deep-copy it when necessary.
-// - A equals() method, so that Meteor can compare it
-// - A toJSONValue() method, so that Meteor can serialize it
-// - a typeName() method, to show how to look it up in our type table.
-// It is okay if these methods are monkey-patched on.
-EJSON.addType = function (name, factory) {
+
+/**
+ * Add a custom type, using a method of your choice to get to and
+ * from a basic JSON-able representation.  The factory argument
+ * is a function of JSON-able --> your object
+ * The type you add must have:
+ * - A clone() method, so that Meteor can deep-copy it when necessary.
+ * - A equals() method, so that Meteor can compare it
+ * - A toJSONValue() method, so that Meteor can serialize it
+ * - a typeName() method, to show how to look it up in our type table.
+ * It is okay if these methods are monkey-patched on.
+ *
+ * @param name
+ * @param factory
+ */
+EJSON.addType = function addType(name, factory) {
   if (_.has(customTypes, name))
     throw new Error("Type " + name + " already present");
   customTypes[name] = factory;
@@ -45,10 +57,10 @@ var builtinConverters = [
       );
     },
     toJSONValue: function (obj) {
-      return { $binary: EJSON._base64Encode(obj) };
+      return { $binary: _base64Encode(obj) };
     },
     fromJSONValue: function (obj) {
-      return EJSON._base64Decode(obj.$binary);
+      return _base64Decode(obj.$binary);
     },
   },
   {
@@ -98,8 +110,22 @@ var builtinConverters = [
   },
 ];
 
-EJSON._isCustomType = function (obj) {
-  return (
+const _base64Decode = (str) => {
+  return base64.toByteArray(str);
+};
+
+const _base64Encode = (obj) => {
+  return base64.fromByteArray(obj);
+};
+
+/**
+ * Returns, whether an object is of a custom registered type
+ * @private
+ * @param obj
+ * @return {boolean}
+ */
+EJSON._isCustomType = function _isCustomType(obj) {
+  return !!(
     obj &&
     typeof obj.toJSONValue === "function" &&
     typeof obj.typeName === "function" &&
@@ -138,7 +164,12 @@ var toJSONValueHelper = function (item) {
   return undefined;
 };
 
-EJSON.toJSONValue = function (item) {
+/**
+ * Serialize an EJSON-compatible value into its plain JSON representation.
+ * @param item {object} A value to serialize to plain JSON.
+ * @return {object}
+ */
+EJSON.toJSONValue = function toJSONValue(item) {
   var changed = toJSONValueHelper(item);
   if (changed !== undefined) return changed;
   if (typeof item === "object") {
@@ -196,7 +227,12 @@ var fromJSONValueHelper = function (value) {
   return value;
 };
 
-EJSON.fromJSONValue = function (item) {
+/**
+ * Deserialize an EJSON value from its plain JSON representation.
+ * @param item {object} A value to deserialize into EJSON.
+ * @return {object}
+ */
+EJSON.fromJSONValue = function fromJSONValue(item) {
   var changed = fromJSONValueHelper(item);
   if (changed === item && typeof item === "object") {
     item = EJSON.clone(item);
@@ -207,22 +243,49 @@ EJSON.fromJSONValue = function (item) {
   }
 };
 
-EJSON.stringify = function (item) {
+/**
+ * Serialize a value to a string.
+ * For EJSON values, the serialization fully represents the value.
+ * For non-EJSON values, serializes the same way as JSON.stringify.
+ * @param item {object} A value to stringify.
+ * @return {string}
+ */
+EJSON.stringify = function stringify(item) {
   return JSON.stringify(EJSON.toJSONValue(item));
 };
 
-EJSON.parse = function (item) {
+/**
+ * Parse a string into an EJSON value. Throws an error if the string is not valid EJSON.
+ * @param item
+ * @return {Object|any}
+ */
+EJSON.parse = function parse(item) {
   return EJSON.fromJSONValue(JSON.parse(item));
 };
 
-EJSON.isBinary = function (obj) {
+/**
+ *
+ * @param obj
+ * @return {boolean|any}
+ */
+EJSON.isBinary = function isBinary(obj) {
   return (
     (typeof Uint8Array !== "undefined" && obj instanceof Uint8Array) ||
     (obj && obj.$Uint8ArrayPolyfill)
   );
 };
 
-EJSON.equals = function (a, b, options) {
+/**
+ * Return true if a and b are equal to each other.
+ * eturn false otherwise.
+ * Uses the equals method on a if present,
+ * otherwise performs a deep comparison.
+ * @param a
+ * @param b
+ * @param options
+ * @return {*}
+ */
+EJSON.equals = function quals(a, b, options) {
   var i;
   var keyOrderSensitive = !!(options && options.keyOrderSensitive);
   if (a === b) return true;
@@ -240,8 +303,17 @@ EJSON.equals = function (a, b, options) {
     return true;
   }
   if (typeof a.equals === "function") return a.equals(b, options);
-  if (a instanceof Array) {
-    if (!(b instanceof Array)) return false;
+
+  // Array.isArray works across iframes while instanceof won't
+  const aIsArray = Array.isArray(a);
+  const bIsArray = Array.isArray(b);
+
+  // if not both or none are array they are not equal
+  if (aIsArray !== bIsArray) {
+    return false;
+  }
+
+  if (aIsArray && bIsArray) {
     if (a.length !== b.length) return false;
     for (i = 0; i < a.length; i++) {
       if (!EJSON.equals(a[i], b[i], options)) return false;
@@ -286,17 +358,18 @@ EJSON.equals = function (a, b, options) {
   }
 };
 
-EJSON.clone = function (v) {
+/**
+ *
+ * @param v
+ * @return {*}
+ */
+EJSON.clone = function clone(v) {
   var ret;
   if (typeof v !== "object") return v;
   if (v === null) return null; // null has typeof "object"
   if (v instanceof Date) return new Date(v.getTime());
   if (EJSON.isBinary(v)) {
-    ret = EJSON.newBinary(v.length);
-    for (var i = 0; i < v.length; i++) {
-      ret[i] = v[i];
-    }
-    return ret;
+    return Uint8Array.from(v);
   }
   if (_.isArray(v) || _.isArguments(v)) {
     // For some reason, _.map doesn't work in this context on Opera (weird test
