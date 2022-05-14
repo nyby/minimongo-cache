@@ -1,0 +1,11 @@
+.DS_Store
+node_modules
+src
+test
+.github
+.prettierrc
+babel.config.json
+coverage
+.nyc_output
+.idea
+.editorconfig
