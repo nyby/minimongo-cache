@@ -21,5 +21,12 @@
     "eventemitter3": "^1.1.0",
     "invariant": "^2.1.1",
     "lodash": "^4.17.21"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nyby/minimongo-cache.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nyby/minimongo-cache/issues"
   }
 }
