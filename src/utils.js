@@ -152,11 +152,11 @@ exports.createUid = () =>
  * @param list
  * @return {*}
  */
-var processNearOperator = function (selector, list) {
-  for (var key in selector) {
-    var value = selector[key];
+const processNearOperator = function (selector, list) {
+  for (const key in selector) {
+    const value = selector[key];
     if (value != null && value["$near"]) {
-      var geo = value["$near"]["$geometry"];
+      const geo = value["$near"]["$geometry"];
       if (geo.type !== "Point") {
         break;
       }
@@ -263,7 +263,7 @@ const pointInPolygon = function (point, polygon) {
  * @param lng2
  * @return {number}
  */
-var getDistanceFromLatLngInM = function (lat1, lng1, lat2, lng2) {
+const getDistanceFromLatLngInM = function (lat1, lng1, lat2, lng2) {
   const R = 6370986; // Radius of the earth in m
   const dLat = deg2rad(lat2 - lat1); // deg2rad below
   const dLng = deg2rad(lng2 - lng1);
@@ -283,7 +283,7 @@ var getDistanceFromLatLngInM = function (lat1, lng1, lat2, lng2) {
  * @param deg
  * @return {number}
  */
-var deg2rad = (deg) => deg * (Math.PI / 180);
+const deg2rad = (deg) => deg * (Math.PI / 180);
 
 /**
  * @private
@@ -291,11 +291,11 @@ var deg2rad = (deg) => deg * (Math.PI / 180);
  * @param list
  * @return {*}
  */
-var processGeoIntersectsOperator = function (selector, list) {
-  for (var key in selector) {
+const processGeoIntersectsOperator = function (selector, list) {
+  for (let key in selector) {
     const value = selector[key];
     if (value != null && value["$geoIntersects"]) {
-      var geo = value["$geoIntersects"]["$geometry"];
+      const geo = value["$geoIntersects"]["$geometry"];
       if (geo.type !== "Polygon") {
         break;
       }

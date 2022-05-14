@@ -1,9 +1,9 @@
 "use strict";
 
-var SynchronousWriteTransaction = require("./SynchronousWriteTransaction");
+const SynchronousWriteTransaction = require("./SynchronousWriteTransaction");
 
-var _ = require("lodash");
-var invariant = require("invariant");
+const _ = require("lodash");
+const invariant = require("invariant");
 
 class ServerQuery {
   constructor(cache, key) {
@@ -114,7 +114,7 @@ const WithServerQuery = {
     }
 
     function invalidate(props) {
-      var key = spec.statics.getKey(props);
+      let key = spec.statics.getKey(props);
       key = typeId + "~" + key;
       serverQueries = Object.keys(serverQueries).reduce((acc, k) => {
         const obj = acc;

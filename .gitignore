@@ -7,3 +7,4 @@ examples/todomvc-react/node_modules
 
 .nyc_output/
 coverage/
+.idea

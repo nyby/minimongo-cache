@@ -20,30 +20,30 @@ licenses, included below:
 
 */
 
-var LocalCollection = {};
-var EJSON = require("./EJSON");
-var _ = require("lodash");
+const LocalCollection = {};
+const EJSON = require("./EJSON");
+const _ = require("lodash");
 
 // Like _.isArray, but doesn't regard polyfilled Uint8Arrays on old browsers as
 // arrays.
-var isArray = function (x) {
+const isArray = function (x) {
   return _.isArray(x) && !EJSON.isBinary(x);
 };
 
-var _anyIfArray = function (x, f) {
+const _anyIfArray = function (x, f) {
   if (isArray(x)) return _.any(x, f);
   return f(x);
 };
 
-var _anyIfArrayPlus = function (x, f) {
+const _anyIfArrayPlus = function (x, f) {
   if (f(x)) return true;
   return isArray(x) && _.any(x, f);
 };
 
-var hasOperators = function (valueSelector) {
-  var theseAreOperators = undefined;
-  for (var selKey in valueSelector) {
-    var thisIsOperator = selKey.substr(0, 1) === "$";
+const hasOperators = function (valueSelector) {
+  let theseAreOperators = undefined;
+  for (let selKey in valueSelector) {
+    const thisIsOperator = selKey.substr(0, 1) === "$";
     if (theseAreOperators === undefined) {
       theseAreOperators = thisIsOperator;
     } else if (theseAreOperators !== thisIsOperator) {
@@ -53,7 +53,7 @@ var hasOperators = function (valueSelector) {
   return !!theseAreOperators; // {} has no operators
 };
 
-var compileValueSelector = function (valueSelector) {
+const compileValueSelector = function (valueSelector) {
   if (valueSelector == null) {
     // undefined or null
     return function (value) {
@@ -93,7 +93,7 @@ var compileValueSelector = function (valueSelector) {
 
   // It's an object, but not an array or regexp.
   if (hasOperators(valueSelector)) {
-    var operatorFunctions = [];
+    const operatorFunctions = [];
     _.each(valueSelector, function (operand, operator) {
       if (!_.has(VALUE_OPERATORS, operator))
         throw new Error("Unrecognized operator: " + operator);
@@ -118,11 +118,11 @@ var compileValueSelector = function (valueSelector) {
 };
 
 // XXX can factor out common logic below
-var LOGICAL_OPERATORS = {
+const LOGICAL_OPERATORS = {
   $and: function (subSelector) {
     if (!isArray(subSelector) || _.isEmpty(subSelector))
       throw Error("$and/$or/$nor must be nonempty array");
-    var subSelectorFunctions = _.map(subSelector, compileDocumentSelector);
+    const subSelectorFunctions = _.map(subSelector, compileDocumentSelector);
     return function (doc) {
       return _.all(subSelectorFunctions, function (f) {
         return f(doc);
@@ -133,7 +133,7 @@ var LOGICAL_OPERATORS = {
   $or: function (subSelector) {
     if (!isArray(subSelector) || _.isEmpty(subSelector))
       throw Error("$and/$or/$nor must be nonempty array");
-    var subSelectorFunctions = _.map(subSelector, compileDocumentSelector);
+    const subSelectorFunctions = _.map(subSelector, compileDocumentSelector);
     return function (doc) {
       return _.any(subSelectorFunctions, function (f) {
         return f(doc);
@@ -144,7 +144,7 @@ var LOGICAL_OPERATORS = {
   $nor: function (subSelector) {
     if (!isArray(subSelector) || _.isEmpty(subSelector))
       throw Error("$and/$or/$nor must be nonempty array");
-    var subSelectorFunctions = _.map(subSelector, compileDocumentSelector);
+    const subSelectorFunctions = _.map(subSelector, compileDocumentSelector);
     return function (doc) {
       return _.all(subSelectorFunctions, function (f) {
         return !f(doc);
@@ -164,7 +164,7 @@ var LOGICAL_OPERATORS = {
   },
 };
 
-var VALUE_OPERATORS = {
+const VALUE_OPERATORS = {
   $in: function (operand) {
     if (!isArray(operand)) throw new Error("Argument to $in must be array");
     return function (value) {
@@ -230,7 +230,7 @@ var VALUE_OPERATORS = {
 
   $nin: function (operand) {
     if (!isArray(operand)) throw new Error("Argument to $nin must be array");
-    var inFunction = VALUE_OPERATORS.$in(operand);
+    const inFunction = VALUE_OPERATORS.$in(operand);
     return function (value) {
       // Field doesn't exist, so it's not-in operand
       if (value === undefined) return true;
@@ -245,7 +245,7 @@ var VALUE_OPERATORS = {
   },
 
   $mod: function (operand) {
-    var divisor = operand[0],
+    const divisor = operand[0],
       remainder = operand[1];
     return function (value) {
       return _anyIfArray(value, function (x) {
@@ -284,7 +284,7 @@ var VALUE_OPERATORS = {
       if (/[^gim]/.test(options))
         throw new Error("Only the i, m, and g regexp options are supported");
 
-      var regexSource = operand instanceof RegExp ? operand.source : operand;
+      const regexSource = operand instanceof RegExp ? operand.source : operand;
       operand = new RegExp(regexSource, options);
     } else if (!(operand instanceof RegExp)) {
       operand = new RegExp(operand);
@@ -306,7 +306,7 @@ var VALUE_OPERATORS = {
   },
 
   $elemMatch: function (operand) {
-    var matcher = compileDocumentSelector(operand);
+    const matcher = compileDocumentSelector(operand);
     return function (value) {
       if (!isArray(value)) return false;
       return _.any(value, function (x) {
@@ -316,7 +316,7 @@ var VALUE_OPERATORS = {
   },
 
   $not: function (operand) {
-    var matcher = compileValueSelector(operand);
+    const matcher = compileValueSelector(operand);
     return function (value) {
       return !matcher(value);
     };
@@ -404,12 +404,13 @@ LocalCollection._f = {
   // any other value.) return negative if a is less, positive if b is
   // less, or 0 if equal
   _cmp: function (a, b) {
+    let i;
     if (a === undefined) return b === undefined ? 0 : -1;
     if (b === undefined) return 1;
-    var ta = LocalCollection._f._type(a);
-    var tb = LocalCollection._f._type(b);
-    var oa = LocalCollection._f._typeorder(ta);
-    var ob = LocalCollection._f._typeorder(tb);
+    let ta = LocalCollection._f._type(a);
+    let tb = LocalCollection._f._type(b);
+    const oa = LocalCollection._f._typeorder(ta);
+    const ob = LocalCollection._f._typeorder(tb);
     if (oa !== ob) return oa < ob ? -1 : 1;
     if (ta !== tb)
       // XXX need to implement this if we implement Symbol or integers, or
@@ -439,9 +440,9 @@ LocalCollection._f = {
     if (ta === 3) {
       // Object
       // this could be much more efficient in the expected case ...
-      var to_array = function (obj) {
-        var ret = [];
-        for (var key in obj) {
+      const to_array = function (obj) {
+        const ret = [];
+        for (let key in obj) {
           ret.push(key);
           ret.push(obj[key]);
         }
@@ -451,10 +452,10 @@ LocalCollection._f = {
     }
     if (ta === 4) {
       // Array
-      for (var i = 0; ; i++) {
+      for (i = 0; ; i++) {
         if (i === a.length) return i === b.length ? 0 : -1;
         if (i === b.length) return 1;
-        var s = LocalCollection._f._cmp(a[i], b[i]);
+        const s = LocalCollection._f._cmp(a[i], b[i]);
         if (s !== 0) return s;
       }
     }
@@ -514,13 +515,13 @@ LocalCollection._f = {
 //                                 {y: 3}]})
 //   returns [1, [2], undefined]
 LocalCollection._makeLookupFunction = function (key) {
-  var dotLocation = key.indexOf(".");
-  var first, lookupRest, nextIsNumeric;
+  const dotLocation = key.indexOf(".");
+  let first, lookupRest, nextIsNumeric;
   if (dotLocation === -1) {
     first = key;
   } else {
     first = key.substr(0, dotLocation);
-    var rest = key.substr(dotLocation + 1);
+    const rest = key.substr(dotLocation + 1);
     lookupRest = LocalCollection._makeLookupFunction(rest);
     // Is the next (perhaps final) piece numeric (ie, an array lookup?)
     nextIsNumeric = /^\d+(\.|$)/.test(rest);
@@ -530,7 +531,7 @@ LocalCollection._makeLookupFunction = function (key) {
     if (doc == null)
       // null or undefined
       return [undefined];
-    var firstLevel = doc[first];
+    let firstLevel = doc[first];
 
     // We don't "branch" at the final level.
     if (!lookupRest) return [firstLevel];
@@ -558,8 +559,8 @@ LocalCollection._makeLookupFunction = function (key) {
  * @param docSelector
  * @return {function(*=): boolean}
  */
-var compileDocumentSelector = function compileDocumentSelector(docSelector) {
-  var perKeySelectors = [];
+function compileDocumentSelector(docSelector) {
+  const perKeySelectors = [];
   _.each(docSelector, function (subSelector, key) {
     if (key.substr(0, 1) === "$") {
       // Outer operators are either logical operators (they recurse back into
@@ -568,10 +569,10 @@ var compileDocumentSelector = function compileDocumentSelector(docSelector) {
         throw new Error("Unrecognized logical operator: " + key);
       perKeySelectors.push(LOGICAL_OPERATORS[key](subSelector));
     } else {
-      var lookUpByIndex = LocalCollection._makeLookupFunction(key);
-      var valueSelectorFunc = compileValueSelector(subSelector);
+      const lookUpByIndex = LocalCollection._makeLookupFunction(key);
+      const valueSelectorFunc = compileValueSelector(subSelector);
       perKeySelectors.push(function (doc) {
-        var branchValues = lookUpByIndex(doc);
+        const branchValues = lookUpByIndex(doc);
         // We apply the selector to each "branched" value and return true if any
         // match. This isn't 100% consistent with MongoDB; eg, see:
         // https://jira.mongodb.org/browse/SERVER-8585
@@ -585,7 +586,7 @@ var compileDocumentSelector = function compileDocumentSelector(docSelector) {
       return f(doc);
     });
   };
-};
+}
 
 /**
  * Give a sort spec, which can be in any of these forms:
@@ -606,10 +607,10 @@ var compileDocumentSelector = function compileDocumentSelector(docSelector) {
  */
 
 LocalCollection._compileSort = function compileSort(spec) {
-  var sortSpecParts = [];
+  const sortSpecParts = [];
 
   if (spec instanceof Array) {
-    for (var i = 0; i < spec.length; i++) {
+    for (let i = 0; i < spec.length; i++) {
       if (typeof spec[i] === "string") {
         sortSpecParts.push({
           lookup: LocalCollection._makeLookupFunction(spec[i]),
@@ -623,7 +624,7 @@ LocalCollection._compileSort = function compileSort(spec) {
       }
     }
   } else if (typeof spec === "object" && spec !== null) {
-    for (var key in spec) {
+    for (let key in spec) {
       sortSpecParts.push({
         lookup: LocalCollection._makeLookupFunction(key),
         ascending: spec[key] >= 0,
@@ -643,9 +644,9 @@ LocalCollection._compileSort = function compileSort(spec) {
   // findMin). Each value can itself be an array, and we look at its values
   // too. (ie, we do a single level of flattening on branchValues, then find the
   // min/max.)
-  var reduceValue = function (branchValues, findMin) {
-    var reduced;
-    var first = true;
+  const reduceValue = function (branchValues, findMin) {
+    let reduced;
+    let first = true;
     // Iterate over all the values found in all the branches, and if a value is
     // an array itself, iterate over the values in the array separately.
     _.each(branchValues, function (branchValue) {
@@ -670,7 +671,7 @@ LocalCollection._compileSort = function compileSort(spec) {
           // Compare the value we found to the value we found so far, saving it
           // if it's less (for an ascending sort) or more (for a descending
           // sort).
-          var cmp = LocalCollection._f._cmp(reduced, value);
+          const cmp = LocalCollection._f._cmp(reduced, value);
           if ((findMin && cmp > 0) || (!findMin && cmp < 0)) reduced = value;
         }
       });
@@ -679,11 +680,11 @@ LocalCollection._compileSort = function compileSort(spec) {
   };
 
   return function (a, b) {
-    for (var i = 0; i < sortSpecParts.length; ++i) {
-      var specPart = sortSpecParts[i];
-      var aValue = reduceValue(specPart.lookup(a), specPart.ascending);
-      var bValue = reduceValue(specPart.lookup(b), specPart.ascending);
-      var compare = LocalCollection._f._cmp(aValue, bValue);
+    for (let i = 0; i < sortSpecParts.length; ++i) {
+      const specPart = sortSpecParts[i];
+      const aValue = reduceValue(specPart.lookup(a), specPart.ascending);
+      const bValue = reduceValue(specPart.lookup(b), specPart.ascending);
+      const compare = LocalCollection._f._cmp(aValue, bValue);
       if (compare !== 0) return specPart.ascending ? compare : -compare;
     }
     return 0;
