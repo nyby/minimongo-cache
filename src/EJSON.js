@@ -72,7 +72,7 @@ const builtinConverters = [
       if (_.isEmpty(obj) || _.size(obj) > 2) {
         return false;
       }
-      return _.any(builtinConverters, function (converter) {
+      return _.some(builtinConverters, function (converter) {
         return converter.matchJSONValue(obj);
       });
     },
@@ -187,7 +187,7 @@ const fromJSONValueHelper = function (value) {
   if (typeof value === "object" && value !== null) {
     if (
       _.size(value) <= 2 &&
-      _.all(value, function (v, k) {
+      _.every(value, function (v, k) {
         return typeof k === "string" && k.substr(0, 1) === "$";
       })
     ) {
@@ -327,7 +327,7 @@ EJSON.equals = function quals(a, b, options) {
       bKeys.push(x);
     });
     i = 0;
-    ret = _.all(a, function (val, x) {
+    ret = _.every(a, function (val, x) {
       if (i >= bKeys.length) {
         return false;
       }
@@ -343,7 +343,7 @@ EJSON.equals = function quals(a, b, options) {
     return ret && i === bKeys.length;
   } else {
     i = 0;
-    ret = _.all(a, function (val, key) {
+    ret = _.every(a, function (val, key) {
       if (!_.has(b, key)) {
         return false;
       }

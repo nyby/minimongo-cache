@@ -33,11 +33,11 @@ exports.processFind = function processFind(items, selector, options) {
   }
 
   if (options && options.skip) {
-    filtered = _.rest(filtered, options.skip);
+    filtered = _.slice(filtered, options.skip);
   }
 
   if (options && options.limit) {
-    filtered = _.first(filtered, options.limit);
+    filtered = _.slice(filtered, 0, options.limit);
   }
 
   // Clone to prevent accidental updates, or apply fields if present
@@ -190,10 +190,10 @@ const processNearOperator = function (selector, list) {
       }
 
       // Limit to 100
-      distances = _.first(distances, 100);
+      distances = _.slice(distances, 0, 100);
 
       // Extract docs
-      list = _.pluck(distances, "doc");
+      list = _.map(distances, "doc");
     }
   }
   return list;
