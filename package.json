@@ -1,6 +1,6 @@
 {
   "name": "@nyby/minimongo",
-  "version": "0.0.50",
+  "version": "0.0.51",
   "description": "Fork of minimongo designed for caching",
   "repository": {
     "type": "git",
